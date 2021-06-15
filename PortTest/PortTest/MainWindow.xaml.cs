@@ -85,6 +85,7 @@ namespace PortTest
                 serialPort.Close();
             }
             serialPort = new SerialPort(PortName, 115200, Parity.None, 8, StopBits.One);
+            serialPort.WriteTimeout = 200;
             
             return OpenPort();
         }
@@ -162,7 +163,7 @@ namespace PortTest
         //扫描设备
         private void scanDeviceBtn_Click(object sender, RoutedEventArgs e)
         {
-            string[] portNames = SerialPort.GetPortNames();
+            string[] portNames = SerialPort.GetPortNames(); //扫描当前哪些端口被占用
             deviceList.Items.Clear();
             foreach(string port in portNames)
             {
@@ -172,7 +173,8 @@ namespace PortTest
                     try
                     {
                         //逐一监测各医疗设备是否连接，是则加入到选择列表中
-                        SendCommand(Util.readDeviceNum09A);
+                        //SendCommand(Util.readDeviceNum09A);
+                        Task.Run(() => SendCommand(Util.readDeviceNum09A));  //在子线程里执行可能耗时的操作
                         Thread.Sleep(100);  //休眠使得数据来得及接收，否则可能扫描不到到设备
                         if (serialPort.BytesToRead != 0)
                         {
@@ -184,7 +186,8 @@ namespace PortTest
                             deviceList.Items.Add(item);
                             hasDetected++;
                         }
-                        SendCommand(Util.readDeviceNum2000C);
+                        //SendCommand(Util.readDeviceNum2000C);
+                        Task.Run(() => SendCommand(Util.readDeviceNum2000C));
                         Thread.Sleep(100);
                         if (serialPort.BytesToRead != 0)
                         {
