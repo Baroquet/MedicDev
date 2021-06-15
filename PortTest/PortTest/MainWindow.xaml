@@ -1,0 +1,33 @@
+﻿<Window x:Class="PortTest.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PortTest"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="275"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="scanDeviceBtn" Content="扫描设备" Width="70" Click="scanDeviceBtn_Click"/>
+                <!--<ListBox x:Name="deviceList" Width="195" Margin="10 0 0 0" SelectionMode="Single" SelectionChanged="deviceList_SelectionChanged"/>-->
+                <ComboBox x:Name="deviceList" Width="195" Margin="10 0 0 0" SelectionChanged="deviceList_SelectionChanged"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="监测数据值：" />
+                <Label x:Name="curDataLabel" />
+            </StackPanel>
+            
+            <Button x:Name="startCaptBtn" Content="开始监测" Click="startCaptBtn_Click" IsEnabled="True"/>
+            <Button x:Name="stopCaptBtn" Content="停止监测" Click="stopCaptBtn_Click" IsEnabled="False"/>
+        </StackPanel>
+    </Grid>
+</Window>
