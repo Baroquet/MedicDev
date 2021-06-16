@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\PortTest"
+    "\\PortTest",
+    "\\PortTest\\PortTest"
   ],
-  "SelectedNode": "\\PortTest\\PortTest.sln",
+  "SelectedNode": "\\PortTest\\PortTest\\MainWindow.xaml.cs",
   "PreviewInSolutionExplorer": false
 }

@@ -15,6 +15,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using LiveCharts;
+using LiveCharts.Wpf;
 
 namespace PortTest
 {
@@ -27,6 +29,9 @@ namespace PortTest
         private bool workState;  //当前设备是否处于监测状态
         private string portName;  //用来记录连接使用的串口号
         private Util.device curD;  //当前选中的设备标识（枚举类型）
+
+        //chart表绑定的数据集
+        public SeriesCollection SeriesCollection { set; get; }
 
         public MainWindow()
         {
@@ -85,7 +90,7 @@ namespace PortTest
                 serialPort.Close();
             }
             serialPort = new SerialPort(PortName, 115200, Parity.None, 8, StopBits.One);
-            serialPort.WriteTimeout = 200;
+            serialPort.WriteTimeout = 500;  //设置发送超时为500ms
             
             return OpenPort();
         }
@@ -144,8 +149,12 @@ namespace PortTest
         public void SendCommand(byte[] command)
         {
             //byte[] writeBuffer = Encoding.ASCII.GetBytes(command);
-            serialPort.Write(command, 0, command.Length);
-            
+            try
+            {
+                serialPort.Write(command, 0, command.Length);
+                Thread.Sleep(100);  //发送成功后在该函数所在线程中延时100ms回到主线程再执行，使数据来得及接收，并且界面没有延迟
+            }
+            catch { }
         }
 
         //按钮状态调整
@@ -161,7 +170,7 @@ namespace PortTest
         }
 
         //扫描设备
-        private void scanDeviceBtn_Click(object sender, RoutedEventArgs e)
+        private async void scanDeviceBtn_Click(object sender, RoutedEventArgs e)
         {
             string[] portNames = SerialPort.GetPortNames(); //扫描当前哪些端口被占用
             deviceList.Items.Clear();
@@ -173,22 +182,23 @@ namespace PortTest
                     try
                     {
                         //逐一监测各医疗设备是否连接，是则加入到选择列表中
-                        //SendCommand(Util.readDeviceNum09A);
-                        Task.Run(() => SendCommand(Util.readDeviceNum09A));  //在子线程里执行可能耗时的操作
-                        Thread.Sleep(100);  //休眠使得数据来得及接收，否则可能扫描不到到设备
+                        Task t1 = Task.Run(() => SendCommand(Util.readDeviceNum09A));  //在子线程里执行可能耗时的操作
+                        await t1;  //异步等待子线程t1结束再继续执行，可以防止界面失灵
+
+                        //改为在子线程Task中等待，故注释下面一行代码
+                        //Thread.Sleep(100);  //休眠使得数据来得及接收，否则可能扫描不到到设备
                         if (serialPort.BytesToRead != 0)
                         {
                             byte[] buffer = new byte[serialPort.BytesToRead];
                             serialPort.Read(buffer, 0, serialPort.BytesToRead);
                             ListBoxItem item = new ListBoxItem();
-                            //item.Uid = 
                             item.Content = Util.device.HKT09A;
                             deviceList.Items.Add(item);
                             hasDetected++;
                         }
-                        //SendCommand(Util.readDeviceNum2000C);
-                        Task.Run(() => SendCommand(Util.readDeviceNum2000C));
-                        Thread.Sleep(100);
+                        Task t2 = Task.Run(() => SendCommand(Util.readDeviceNum2000C));
+                        await t2;
+                        //Thread.Sleep(100);
                         if (serialPort.BytesToRead != 0)
                         {
                             byte[] buffer = new byte[serialPort.BytesToRead];
@@ -278,5 +288,6 @@ namespace PortTest
                 Console.WriteLine(ex.Message);
             }
         }
+
     }
 }

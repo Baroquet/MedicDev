@@ -28,3 +28,10 @@ C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\obj\Debug\PortTest.csproj.Ge
 C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\obj\Debug\PortTest.csproj.CoreCompileInputs.cache
 C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\obj\Debug\PortTest.exe
 C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\obj\Debug\PortTest.pdb
+C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\bin\Debug\LiveCharts.dll
+C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\bin\Debug\LiveCharts.Wpf.dll
+C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\bin\Debug\LiveCharts.pdb
+C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\bin\Debug\LiveCharts.xml
+C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\bin\Debug\LiveCharts.Wpf.pdb
+C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\bin\Debug\LiveCharts.Wpf.xml
+C:\Users\zt\Source\Repos\MedicDev\PortTest\PortTest\obj\Debug\PortTest.csproj.CopyComplete

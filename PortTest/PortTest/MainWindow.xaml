@@ -3,18 +3,22 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:local="clr-namespace:PortTest"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <!--定义列-->
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="275"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <!--定义行-->
         <Grid.RowDefinitions>
             <RowDefinition/>
         </Grid.RowDefinitions>
 
+        <!--左边竖直栈布局-->
         <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0">
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="scanDeviceBtn" Content="扫描设备" Width="70" Click="scanDeviceBtn_Click"/>
@@ -28,6 +32,11 @@
             
             <Button x:Name="startCaptBtn" Content="开始监测" Click="startCaptBtn_Click" IsEnabled="True"/>
             <Button x:Name="stopCaptBtn" Content="停止监测" Click="stopCaptBtn_Click" IsEnabled="False"/>
+        </StackPanel>
+
+        <!--右边竖直栈布局-->
+        <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="1">
+            <lvc:CartesianChart Name="waveChart" Series="{Binding SeriesCollection}" />
         </StackPanel>
     </Grid>
 </Window>
