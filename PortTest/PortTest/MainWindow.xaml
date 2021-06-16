@@ -22,7 +22,6 @@
         <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0">
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="scanDeviceBtn" Content="扫描设备" Width="70" Click="scanDeviceBtn_Click"/>
-                <!--<ListBox x:Name="deviceList" Width="195" Margin="10 0 0 0" SelectionMode="Single" SelectionChanged="deviceList_SelectionChanged"/>-->
                 <ComboBox x:Name="deviceList" Width="195" Margin="10 0 0 0" SelectionChanged="deviceList_SelectionChanged"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
