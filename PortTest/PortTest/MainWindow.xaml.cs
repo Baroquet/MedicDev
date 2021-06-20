@@ -144,12 +144,15 @@ namespace PortTest
                     //转换为十进制数据-----温度数据
                     double temperature = 0.1 * (readBuffer[5] * 128 + readBuffer[6]);
                     Dispatcher.Invoke(() => { curDataLabel.Content = temperature + "℃"; });
+                    //波形图更新显示
+                    //RefreshChart(temperature);
                 }
                 else if (curD == Util.device.HK2000C)
                 {
                     //转换为十进制数据-----脉搏波数据
                     double puls = 0.1 * (readBuffer[5] * 128 + readBuffer[6]);
                     Dispatcher.Invoke(() => { curDataLabel.Content = puls + "Hz"; });
+                    //RefreshChart(puls);
                 }
                 else if(curD == Util.device.HKS12C)
                 {
@@ -158,7 +161,7 @@ namespace PortTest
                     double hue = readBuffer[6];  //血氧饱和度（%）
                     double rate = readBuffer[7]; //心率（次/分钟）
                     Dispatcher.Invoke(() => { curDataLabel.Content = "MB：" + scale + "，XY：" + hue + "%，XL：" + rate + "次/分钟"; });
-
+                    
                 }
             }
             catch(Exception ex)
@@ -203,7 +206,10 @@ namespace PortTest
             foreach(string port in portNames)
             {
                 int hasDetected = 0;
-                if(InitCOM(port))
+                //在子线程中初始化串口
+                Task<bool> t = Task.Run(() => InitCOM(port));
+                bool r = await t;
+                if(r)
                 {
                     try
                     {
@@ -272,6 +278,9 @@ namespace PortTest
             {
                 ListBoxItem item = (ListBoxItem)deviceList.SelectedItem;
                 curD = (Util.device)item.Content;  //将当前设备标识符‘curD’赋值为设备名
+                //根据设备类型'curD'初始化波形图
+                //InitChart(curD);
+                
             }
         }
 
