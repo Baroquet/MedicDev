@@ -22,11 +22,19 @@
         <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0">
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="scanDeviceBtn" Content="扫描设备" Width="70" Click="scanDeviceBtn_Click"/>
-                <ComboBox x:Name="deviceList" Width="195" Margin="10 0 0 0" SelectionChanged="deviceList_SelectionChanged"/>
+                <ComboBox x:Name="deviceList" Width="195" Margin="10 0 0 0"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
-                <Label Content="监测数据值：" />
+                <Label Content="体温：" />
                 <Label x:Name="curDataLabel" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="脉搏：" />
+                <Label x:Name="curDataLabel1" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="血氧：" />
+                <Label x:Name="curDataLabel2" />
             </StackPanel>
             
             <Button x:Name="startCaptBtn" Content="开始监测" Click="startCaptBtn_Click" IsEnabled="True"/>

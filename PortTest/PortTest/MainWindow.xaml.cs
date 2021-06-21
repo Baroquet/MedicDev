@@ -28,7 +28,7 @@ namespace PortTest
         private SerialPort serialPort;
         private bool workState;  //当前设备是否处于监测状态
         private string portName;  //用来记录连接使用的串口号
-        private Util.device curD;  //当前选中的设备标识（枚举类型）
+        //private Util.device curD;  //当前选中的设备标识（枚举类型）
 
         //chart表绑定的数据集
         public SeriesCollection SeriesCollection { set; get; }
@@ -40,12 +40,12 @@ namespace PortTest
             serialPort = null;
             workState = false;
             portName = "";
-            curD = Util.device.NODevice;
+            //curD = Util.device.NODevice;
         }
 
         #region 串口操作函数
         //关闭窗口前调用
-        private void Content_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private async void Content_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             if (MessageBox.Show("关闭程序？", "提示", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
@@ -53,20 +53,19 @@ namespace PortTest
                 {
                     if(workState)
                     {
-                        //发送命令停止检测
-                        switch (curD)
+                        try
                         {
-                            case Util.device.HKT09A:
-                                SendCommand(Util.stopCapt09A);
-                                break;
-                            case Util.device.HK2000C:
-                                SendCommand(Util.stopCapt2000C);
-                                break;
-                            case Util.device.HKS12C:
-                                SendCommand(Util.stopCaptHKS12C);
-                                break;
+                            int num = 0;
+                            Task<int> t = Task.Run(() => ChangeDeviceState(false));
+                            num = await t;
+                            if (num > 0)
+                            {
+                                workState = false;
+                                changeState1();
+                            }
                         }
-                        //workState = false;
+                        catch { }
+                        
                     }
                     serialPort.Close();
                 }
@@ -78,6 +77,81 @@ namespace PortTest
             }
         }
 
+
+        //遍历设备，根据指示改变其工作状态
+        //state为true：开启监测
+        //state为false：关闭监测
+        //返回扫描到的设备数
+        private int ChangeDeviceState(bool state)
+        {
+            int num = 0;
+            try
+            {
+                //准备开启设备监测
+                if(state)
+                {
+                    if(deviceList.Items.Count == 0)
+                    {
+                        return 0;
+                    }
+                    //由于该函数一般是在子线程中调用所以访问界面元素时需要使用Dispatcher
+                    Dispatcher.Invoke(() =>
+                    {
+                        foreach (ListBoxItem d in deviceList.Items)
+                        {
+                            switch (d.Content)
+                            {
+                                case Util.device.HKT09A:
+                                    serialPort.DataReceived += SerialPort_DataReceived;
+                                    SendCommand(Util.startCapt09A);
+                                    break;
+                                case Util.device.HK2000C:
+                                    serialPort.DataReceived += SerialPort_DataReceived1;
+                                    SendCommand(Util.startCapt2000C);
+                                    break;
+                                case Util.device.HKS12C:
+                                    serialPort.DataReceived += SerialPort_DataReceived2;
+                                    SendCommand(Util.startCaptHKS12C);
+                                    break;
+                            }
+                            num++;
+                        }
+                    });
+                    
+                }
+                else  //关闭设备
+                {
+                    if (deviceList.Items.Count == 0)
+                    {
+                        return 0;
+                    }
+                    Dispatcher.Invoke(() => {
+                        foreach (ListBoxItem d in deviceList.Items)
+                        {
+                            switch (d.Content)
+                            {
+                                case Util.device.HKT09A:
+                                    serialPort.DataReceived -= SerialPort_DataReceived;
+                                    SendCommand(Util.stopCapt09A);
+                                    break;
+                                case Util.device.HK2000C:
+                                    serialPort.DataReceived -= SerialPort_DataReceived1;
+                                    SendCommand(Util.stopCapt2000C);
+                                    break;
+                                case Util.device.HKS12C:
+                                    serialPort.DataReceived -= SerialPort_DataReceived2;
+                                    SendCommand(Util.stopCaptHKS12C);
+                                    break;
+                            }
+                            num++;
+                        }
+                    });
+                }
+            }
+            catch { }
+            return num;
+        }
+
         //串口对象初始化
         public bool InitCOM(string PortName)
         {
@@ -86,21 +160,17 @@ namespace PortTest
             {
                 if (workState)
                 {
-                    //发送命令停止检测
-                    switch (curD)
+                    try
                     {
-                        case Util.device.HKT09A:
-                            SendCommand(Util.stopCapt09A);
-                            break;
-                        case Util.device.HK2000C:
-                            SendCommand(Util.stopCapt2000C);
-                            break;
-                        case Util.device.HKS12C:
-                            SendCommand(Util.stopCaptHKS12C);
-                            break;
+                        int num = ChangeDeviceState(false);
+                        if (num > 0)
+                        {
+                            workState = false;
+                            changeState1();
+                        }
                     }
-                    serialPort.DataReceived -= SerialPort_DataReceived;  //不写这句好像会界面卡死
-                    workState = false;
+                    catch { }
+
                 }
                 serialPort.Close();
             }
@@ -134,41 +204,64 @@ namespace PortTest
         {
             //Thread.Sleep(700);
             byte[] readBuffer = new byte[serialPort.BytesToRead];
-            
+
             try
             {
                 Console.WriteLine(serialPort.BytesToRead);
                 serialPort.Read(readBuffer, 0, serialPort.BytesToRead);
-                if (curD == Util.device.HKT09A)
-                {
-                    //转换为十进制数据-----温度数据
-                    double temperature = 0.1 * (readBuffer[5] * 128 + readBuffer[6]);
-                    Dispatcher.Invoke(() => { curDataLabel.Content = temperature + "℃"; });
-                    //波形图更新显示
-                    //RefreshChart(temperature);
-                }
-                else if (curD == Util.device.HK2000C)
-                {
-                    //转换为十进制数据-----脉搏波数据
-                    double puls = 0.1 * (readBuffer[5] * 128 + readBuffer[6]);
-                    Dispatcher.Invoke(() => { curDataLabel.Content = puls + "Hz"; });
-                    //RefreshChart(puls);
-                }
-                else if(curD == Util.device.HKS12C)
-                {
-                    //转换为十进制数据-----血氧数据
-                    double scale = readBuffer[5];  //血氧容积波形幅值
-                    double hue = readBuffer[6];  //血氧饱和度（%）
-                    double rate = readBuffer[7]; //心率（次/分钟）
-                    Dispatcher.Invoke(() => { curDataLabel.Content = "MB：" + scale + "，XY：" + hue + "%，XL：" + rate + "次/分钟"; });
-                    
-                }
+                
+                //转换为十进制数据-----温度数据
+                double temperature = 0.1 * (readBuffer[5] * 128 + readBuffer[6]);
+                Dispatcher.Invoke(() => { curDataLabel.Content = temperature + "℃"; });
+                //波形图更新显示
+                //RefreshChart(temperature);
+               
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
             
+        }
+
+        public void SerialPort_DataReceived1(object sender, SerialDataReceivedEventArgs e)
+        {
+            byte[] readBuffer = new byte[serialPort.BytesToRead];
+            try
+            {
+                serialPort.Read(readBuffer, 0, serialPort.BytesToRead);
+                
+                //转换为十进制数据-----脉搏波数据
+                double puls = (readBuffer[5] * 128 + readBuffer[6]);
+                Dispatcher.Invoke(() => { curDataLabel1.Content = puls + "mmHg"; });
+                //RefreshChart(puls);
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+        }
+
+        public void SerialPort_DataReceived2(object sender, SerialDataReceivedEventArgs e)
+        {
+            byte[] readBuffer = new byte[serialPort.BytesToRead];
+            try
+            {
+                serialPort.Read(readBuffer, 0, serialPort.BytesToRead);
+                
+                //转换为十进制数据-----血氧数据
+                double scale = readBuffer[5];  //血氧容积波形幅值
+                double hue = readBuffer[6];  //血氧饱和度（%）
+                double rate = readBuffer[7]; //心率（次/分钟）
+                Dispatcher.Invoke(() => { curDataLabel2.Content = "MB：" + scale + "，XY：" + hue + "%，XL：" + rate + "次/分钟"; });
+                
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         //向串口发送数据
@@ -206,9 +299,7 @@ namespace PortTest
             foreach(string port in portNames)
             {
                 int hasDetected = 0;
-                //在子线程中初始化串口
-                Task<bool> t = Task.Run(() => InitCOM(port));
-                bool r = await t;
+                bool r = await Task<bool>.Run(() => InitCOM(port));
                 if(r)
                 {
                     try
@@ -271,42 +362,18 @@ namespace PortTest
             }
         }
 
-        //选取不同设备
-        private void deviceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if(deviceList.Items.Count > 0)
-            {
-                ListBoxItem item = (ListBoxItem)deviceList.SelectedItem;
-                curD = (Util.device)item.Content;  //将当前设备标识符‘curD’赋值为设备名
-                //根据设备类型'curD'初始化波形图
-                //InitChart(curD);
-                
-            }
-        }
-
         //开启监测
-        private void startCaptBtn_Click(object sender, RoutedEventArgs e)
+        private async void startCaptBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                switch (curD)
+                int num = 0;
+                Task<int> t = Task.Run(() => ChangeDeviceState(true));
+                num = await t;
+                if (num > 0)
                 {
-                    case Util.device.NODevice:
-                        break;
-                    case Util.device.HKT09A:
-                        serialPort.DataReceived += SerialPort_DataReceived;
-                        SendCommand(Util.startCapt09A); workState = true;
-                        changeState2();
-                        break;
-                    case Util.device.HK2000C:
-                        serialPort.DataReceived += SerialPort_DataReceived;
-                        SendCommand(Util.startCapt2000C); workState = true;
-                        changeState2();
-                        break;
-                    case Util.device.HKS12C:
-                        serialPort.DataReceived += SerialPort_DataReceived;
-                        SendCommand(Util.startCaptHKS12C); workState = true;
-                        break;
+                    workState = true;
+                    changeState2();
                 }
             }
             catch(Exception ex)
@@ -316,26 +383,19 @@ namespace PortTest
         }
 
         //停止监测
-        private void stopCaptBtn_Click(object sender, RoutedEventArgs e)
+        private async void stopCaptBtn_Click(object sender, RoutedEventArgs e)
         {
             //发送命令停止检测
             try
             {
-                switch (curD)
+                int num = 0;
+                Task<int> t = Task.Run(() => ChangeDeviceState(false));
+                num = await t;
+                if (num > 0)
                 {
-                    case Util.device.HKT09A:
-                        SendCommand(Util.stopCapt09A);
-                        break;
-                    case Util.device.HK2000C:
-                        SendCommand(Util.stopCapt2000C);
-                        break;
-                    case Util.device.HKS12C:
-                        SendCommand(Util.stopCaptHKS12C);
-                        break;
+                    workState = false;
+                    changeState1();
                 }
-                serialPort.DataReceived -= SerialPort_DataReceived;  //不写这句好像会界面卡死
-                workState = false;
-                changeState1();
             }
             catch(Exception ex)
             {
