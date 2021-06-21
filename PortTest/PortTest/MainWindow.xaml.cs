@@ -28,6 +28,11 @@ namespace PortTest
         private SerialPort serialPort;
         private bool workState;  //当前设备是否处于监测状态
         private string portName;  //用来记录连接使用的串口号
+        private bool[] linkState;//三台设备的连接状态
+
+        private double temDelta; //温度校准差
+        
+        //private int pulLev;
         //private Util.device curD;  //当前选中的设备标识（枚举类型）
 
         //chart表绑定的数据集
@@ -37,9 +42,14 @@ namespace PortTest
         {
             InitializeComponent();
             this.Closing += Content_Closing;
+            
             serialPort = null;
             workState = false;
             portName = "";
+            linkState = new bool[]{ false, false, false};
+            changeState3();
+            temDelta = 0.0;
+            //pulLev = 0;
             //curD = Util.device.NODevice;
         }
 
@@ -207,11 +217,12 @@ namespace PortTest
 
             try
             {
-                Console.WriteLine(serialPort.BytesToRead);
+                //Console.WriteLine(serialPort.BytesToRead);
                 serialPort.Read(readBuffer, 0, serialPort.BytesToRead);
                 
                 //转换为十进制数据-----温度数据
                 double temperature = 0.1 * (readBuffer[5] * 128 + readBuffer[6]);
+                temperature += temDelta;  //与校准值求和
                 Dispatcher.Invoke(() => { curDataLabel.Content = temperature + "℃"; });
                 //波形图更新显示
                 //RefreshChart(temperature);
@@ -255,7 +266,7 @@ namespace PortTest
                 double scale = readBuffer[5];  //血氧容积波形幅值
                 double hue = readBuffer[6];  //血氧饱和度（%）
                 double rate = readBuffer[7]; //心率（次/分钟）
-                Dispatcher.Invoke(() => { curDataLabel2.Content = "MB：" + scale + "，XY：" + hue + "%，XL：" + rate + "次/分钟"; });
+                Dispatcher.Invoke(() => { curDataLabel2.Content = rate + "次/分钟"; curDataLabel3.Content = hue + "%"; curDataLabel4.Content = scale; });
                 
             }
             catch (Exception ex)
@@ -273,20 +284,37 @@ namespace PortTest
                 serialPort.Write(command, 0, command.Length);
                 Thread.Sleep(100);  //发送成功后在该函数所在线程中延时100ms回到主线程再执行，使数据来得及接收，并且界面没有延迟
             }
-            catch { }
+            catch (Exception ex) 
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
         #endregion
 
         //按钮状态调整
-        private void changeState1()
+        private void changeState1()  //刚关闭监测
         {
             stopCaptBtn.IsEnabled = false;
             startCaptBtn.IsEnabled = true;
+            upTemBtn.IsEnabled = false;
+            downTemBtn.IsEnabled = false;
+            pulLevList.IsEnabled = false;
         }
-        private void changeState2()
+        private void changeState2()  //开始监测之后
         {
             stopCaptBtn.IsEnabled = true;
             startCaptBtn.IsEnabled = false;
+            upTemBtn.IsEnabled = linkState[0];
+            downTemBtn.IsEnabled = linkState[0];
+            pulLevList.IsEnabled = linkState[1];
+        }
+        private void changeState3()  //初始状态|未扫描到任何设备
+        {
+            stopCaptBtn.IsEnabled = false;
+            startCaptBtn.IsEnabled = false;
+            upTemBtn.IsEnabled = false;
+            downTemBtn.IsEnabled = false;
+            pulLevList.IsEnabled = false;
         }
 
         #region 组件响应事件
@@ -317,6 +345,7 @@ namespace PortTest
                             ListBoxItem item = new ListBoxItem();
                             item.Content = Util.device.HKT09A;
                             deviceList.Items.Add(item);
+                            linkState[0] = true;
                             hasDetected++;
                         }
                         Task t2 = Task.Run(() => SendCommand(Util.readDeviceNum2000C));
@@ -329,6 +358,7 @@ namespace PortTest
                             ListBoxItem item = new ListBoxItem();
                             item.Content = Util.device.HK2000C;
                             deviceList.Items.Add(item);
+                            linkState[1] = true;
                             hasDetected++;
                         }
                         Task t3 = Task.Run(() => SendCommand(Util.readDeviceNumHKS12C));
@@ -341,6 +371,7 @@ namespace PortTest
                             ListBoxItem item = new ListBoxItem();
                             item.Content = Util.device.HKS12C;
                             deviceList.Items.Add(item);
+                            linkState[2] = true;
                             hasDetected++;
                         }
                     }
@@ -355,10 +386,15 @@ namespace PortTest
                     break;
                 }
             }
-            changeState1();
-            if(deviceList.Items.Count > 0)
+            if (deviceList.Items.Count > 0)
             {
+                changeState1();
                 deviceList.SelectedIndex = 0;
+            }
+            else  //未扫描到
+            {
+                linkState = new bool[]{false, false, false};
+                changeState3();
             }
         }
 
@@ -404,5 +440,50 @@ namespace PortTest
         }
         #endregion
 
+        //上调温度偏差
+        private void upTemBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                //Task t = Task.Run(() => SendCommand(Util.upTem09A));
+                //await t;
+                
+                temDelta += 0.1;
+                temDeltaLabel.Content = temDelta >= 0.0 ? ("+" + temDelta + "℃") : (temDelta + "℃");
+            }
+            catch { }
+        }
+
+        //下调温度偏差
+        private void downTemBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                //Task t = Task.Run(() => SendCommand(Util.downTem09A));
+                //await t;
+                
+                temDelta -= 0.1;
+                temDeltaLabel.Content = temDelta >= 0.0 ? ("+" + temDelta + "℃") : (temDelta + "℃");
+            }
+            catch { }
+        }
+
+        private async void pulLevList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                ComboBoxItem item = (ComboBoxItem)pulLevList.SelectedItem;
+                //设置脉搏幅度级别（0~10）
+                int level = int.Parse(item.Content.ToString());
+                //事先判断出校验位不会溢出一个字节，所以命令字节数组即时生成
+                byte[] command = { 0xFF, 0xCA, 0x04, (byte)(0xA8 + level), 0xA4, (byte)level };
+                await Task.Run(() => SendCommand(command));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+        }
     }
 }

@@ -6,7 +6,7 @@
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:local="clr-namespace:PortTest"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
         <!--定义列-->
         <Grid.ColumnDefinitions>
@@ -21,24 +21,70 @@
         <!--左边竖直栈布局-->
         <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0">
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="scanDeviceBtn" Content="扫描设备" Width="70" Click="scanDeviceBtn_Click"/>
-                <ComboBox x:Name="deviceList" Width="195" Margin="10 0 0 0"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="体温：" />
-                <Label x:Name="curDataLabel" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="脉搏：" />
-                <Label x:Name="curDataLabel1" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="血氧：" />
-                <Label x:Name="curDataLabel2" />
+                <Button x:Name="scanDeviceBtn" Content="扫描设备" Margin="15 10 0 10" Width="60" Click="scanDeviceBtn_Click"/>
+                <ComboBox x:Name="deviceList" Width="175" Margin="10 10 10 10"/>
             </StackPanel>
             
-            <Button x:Name="startCaptBtn" Content="开始监测" Click="startCaptBtn_Click" IsEnabled="True"/>
-            <Button x:Name="stopCaptBtn" Content="停止监测" Click="stopCaptBtn_Click" IsEnabled="False"/>
+            <GroupBox Header="体温" Margin="10 0 10 10">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="温度值：" />
+                        <Label x:Name="curDataLabel" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="校准：" />
+                        <Button x:Name="upTemBtn" Width="50" Margin="0 0 10 0" Content="上调" Click="upTemBtn_Click" />
+                        <Button x:Name="downTemBtn" Width="50" Margin="0 0 10 0" Content="下调" Click="downTemBtn_Click" />
+                        <Label x:Name="temDeltaLabel" Content="+0℃" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            
+            <GroupBox Header="脉搏" Margin="10 0 10 10">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="压力值：" />
+                        <Label x:Name="curDataLabel1" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="调幅："/>
+                        <ComboBox x:Name="pulLevList" Width="50" SelectionChanged="pulLevList_SelectionChanged">
+                            <ComboBoxItem Content="0"/>
+                            <ComboBoxItem Content="1"/>
+                            <ComboBoxItem Content="2"/>
+                            <ComboBoxItem Content="3"/>
+                            <ComboBoxItem Content="4"/>
+                            <ComboBoxItem Content="5"/>
+                            <ComboBoxItem Content="6"/>
+                            <ComboBoxItem Content="7"/>
+                            <ComboBoxItem Content="8"/>
+                            <ComboBoxItem Content="9"/>
+                            <ComboBoxItem Content="10"/>
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="血氧" Margin="10 0 10 10">
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="心率：" />
+                        <Label x:Name="curDataLabel2" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="血氧饱和度：" />
+                        <Label x:Name="curDataLabel3" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="血容积脉搏波形幅值：" />
+                        <Label x:Name="curDataLabel4" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            
+            
+            <Button x:Name="startCaptBtn" Margin="15 0 15 10" Content="开始监测" Click="startCaptBtn_Click"/>
+            <Button x:Name="stopCaptBtn" Margin="15 0 15 0" Content="停止监测" Click="stopCaptBtn_Click" />
         </StackPanel>
 
         <!--右边竖直栈布局-->
